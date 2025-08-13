@@ -28,6 +28,10 @@ export default function SocketHandler(
   // Socket.IOのサーバーを作成する
   const io = new SocketServer(res.socket.server, {
     addTrailingSlash: false,
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+    },
   });
 
   // クライアントが接続してきたら、コネクションを確立する

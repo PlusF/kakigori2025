@@ -57,7 +57,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       startLoading();
-      await fetch("http://localhost:3000/api/sockets", { method: "POST" });
+      await fetch("/api/sockets", { method: "POST" });
       const s = io();
       s.connect();
       s.on("order", (data) => {
