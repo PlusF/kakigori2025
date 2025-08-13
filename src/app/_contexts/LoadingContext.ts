@@ -4,8 +4,10 @@ import { createContext } from "react";
 
 export const LoadingContext = createContext<{
   loading: boolean;
-  setLoading: (loading: boolean) => void;
+  startLoading: () => void;
+  stopLoading: () => void;
 }>({
   loading: false,
-  setLoading: () => {},
+  startLoading: () => {},
+  stopLoading: () => {},
 });

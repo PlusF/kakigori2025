@@ -1,17 +1,16 @@
 "use client";
 
-import { 
-  Text, 
-  Title, 
-  Stack, 
-  Paper, 
-  Group, 
-  Badge, 
+import {
+  Text,
+  Title,
+  Stack,
+  Paper,
+  Group,
+  Badge,
   useMantineTheme,
   Card,
   Divider,
-  ScrollArea,
-  Table
+  Table,
 } from "@mantine/core";
 import { SocketContext } from "../_contexts/SocketContext";
 import { useContext } from "react";
@@ -23,12 +22,12 @@ export default function OrderHistory() {
 
   const formatDate = (date: Date | string) => {
     const d = new Date(date);
-    return d.toLocaleString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+    return d.toLocaleString("ja-JP", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -49,80 +48,73 @@ export default function OrderHistory() {
         </Paper>
       ) : (
         <Stack gap="md">
-          <Group justify="space-between">
-            <Badge size="lg" variant="filled" color={theme.primaryColor}>
-              総注文数: {orders.length}件
-            </Badge>
-            <Badge size="lg" variant="light" color="green">
-              総売上: {orders.reduce((sum, order) => sum + order.total, 0).toLocaleString()}円
-            </Badge>
-          </Group>
+          {orders.map((order, index) => (
+            <Card
+              key={order.id}
+              shadow="sm"
+              padding="lg"
+              radius="md"
+              withBorder
+            >
+              <Stack gap="sm">
+                <Group justify="space-between">
+                  <Group gap="xs">
+                    <IconReceipt
+                      size={20}
+                      color={theme.colors[theme.primaryColor][6]}
+                    />
+                    <Text fw={600} size="lg">
+                      注文 #{orders.length - index}
+                    </Text>
+                  </Group>
+                  <Badge variant="light" color="blue">
+                    {formatDate(order.createdAt)}
+                  </Badge>
+                </Group>
 
-          <ScrollArea h={600}>
-            <Stack gap="md">
-              {orders.map((order, index) => (
-                <Card 
-                  key={order.id} 
-                  shadow="sm" 
-                  padding="lg" 
-                  radius="md" 
-                  withBorder
-                >
-                  <Stack gap="sm">
-                    <Group justify="space-between">
-                      <Group gap="xs">
-                        <IconReceipt size={20} color={theme.colors[theme.primaryColor][6]} />
-                        <Text fw={600} size="lg">
-                          注文 #{orders.length - index}
-                        </Text>
-                      </Group>
-                      <Badge variant="light" color="blue">
-                        {formatDate(order.createdAt)}
-                      </Badge>
-                    </Group>
+                <Divider />
 
-                    <Divider />
+                {order.OrderItem && order.OrderItem.length > 0 && (
+                  <Table>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>商品名</Table.Th>
+                        <Table.Th>単価</Table.Th>
+                        <Table.Th>数量</Table.Th>
+                        <Table.Th>小計</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {order.OrderItem.map((item) => (
+                        <Table.Tr key={item.id}>
+                          <Table.Td>{item.MenuItem.name}</Table.Td>
+                          <Table.Td>{item.MenuItem.price}円</Table.Td>
+                          <Table.Td>{item.quantity}</Table.Td>
+                          <Table.Td fw={500}>
+                            {(
+                              item.MenuItem.price * item.quantity
+                            ).toLocaleString()}
+                            円
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                )}
 
-                    {order.OrderItem && order.OrderItem.length > 0 && (
-                      <Table>
-                        <Table.Thead>
-                          <Table.Tr>
-                            <Table.Th>商品名</Table.Th>
-                            <Table.Th>単価</Table.Th>
-                            <Table.Th>数量</Table.Th>
-                            <Table.Th>小計</Table.Th>
-                          </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
-                          {order.OrderItem.map((item) => (
-                            <Table.Tr key={item.id}>
-                              <Table.Td>{item.MenuItem.name}</Table.Td>
-                              <Table.Td>{item.MenuItem.price}円</Table.Td>
-                              <Table.Td>{item.quantity}</Table.Td>
-                              <Table.Td fw={500}>
-                                {(item.MenuItem.price * item.quantity).toLocaleString()}円
-                              </Table.Td>
-                            </Table.Tr>
-                          ))}
-                        </Table.Tbody>
-                      </Table>
-                    )}
+                <Divider />
 
-                    <Divider />
-
-                    <Group justify="space-between">
-                      <Text size="lg" fw={600}>
-                        合計金額
-                      </Text>
-                      <Text size="xl" fw={700} c={theme.primaryColor}>
-                        {order.total.toLocaleString()}円
-                      </Text>
-                    </Group>
-                  </Stack>
-                </Card>
-              ))}
-            </Stack>
-          </ScrollArea>
+                <Group justify="space-between">
+                  <Text size="lg" fw={600}>
+                    合計金額
+                  </Text>
+                  <Text size="xl" fw={700} c={theme.primaryColor}>
+                    {order.total.toLocaleString()}円
+                  </Text>
+                </Group>
+              </Stack>
+            </Card>
+          ))}
         </Stack>
       )}
     </Stack>

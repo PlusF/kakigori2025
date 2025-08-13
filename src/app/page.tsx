@@ -31,28 +31,30 @@ export default function Home() {
       value: `${summary.totalSales.toLocaleString()}円`,
       icon: IconCurrencyYen,
       color: "teal",
-      description: "本日の売上高"
+      description: "累計売上高"
     },
     {
       title: "注文数",
       value: `${summary.totalOrders}件`,
       icon: IconShoppingCart,
       color: "blue",
-      description: "本日の注文件数"
+      description: "累計注文件数"
     },
     {
-      title: "在庫",
-      value: "1,000,000個",
+      title: "平均単価",
+      value: summary.totalOrders > 0 
+        ? `${Math.round(summary.totalSales / summary.totalOrders).toLocaleString()}円`
+        : "0円",
       icon: IconPackage,
       color: "grape",
-      description: "現在の在庫数"
+      description: "注文あたりの平均金額"
     },
     {
-      title: "スタッフ",
-      value: "8人",
+      title: "販売個数",
+      value: `${summary.totalQuantity || 0}個`,
       icon: IconUsers,
       color: "orange",
-      description: "本日のシフト人数"
+      description: "累計販売個数"
     }
   ];
 
@@ -100,18 +102,18 @@ export default function Home() {
                 <Title order={3} size="h4">
                   売上目標達成率
                 </Title>
-                <Badge color="green" variant="light">
-                  85%
+                <Badge color={summary.totalSales >= 500000 ? "green" : "blue"} variant="light">
+                  {Math.min(Math.round((summary.totalSales / 500000) * 100), 100)}%
                 </Badge>
               </Group>
               <Progress 
-                value={85} 
+                value={Math.min(Math.round((summary.totalSales / 500000) * 100), 100)} 
                 size="xl" 
                 radius="xl" 
                 color={theme.primaryColor}
               />
               <Text size="sm" c="dimmed">
-                目標: 500,000円 / 現在: 425,000円
+                目標: 500,000円 / 現在: {summary.totalSales.toLocaleString()}円
               </Text>
             </Stack>
           </Paper>
@@ -124,66 +126,31 @@ export default function Home() {
                 人気メニュー TOP3
               </Title>
               <Stack gap="xs">
-                <Group justify="space-between">
-                  <Group gap="xs">
-                    <Badge color="gold" variant="filled" size="sm">1</Badge>
-                    <Text size="sm">いちご氷</Text>
-                  </Group>
-                  <Text size="sm" fw={600}>120杯</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Group gap="xs">
-                    <Badge color="gray" variant="filled" size="sm">2</Badge>
-                    <Text size="sm">宇治金時</Text>
-                  </Group>
-                  <Text size="sm" fw={600}>98杯</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Group gap="xs">
-                    <Badge color="orange" variant="filled" size="sm">3</Badge>
-                    <Text size="sm">マンゴー氷</Text>
-                  </Group>
-                  <Text size="sm" fw={600}>76杯</Text>
-                </Group>
+                {summary.popularItems && summary.popularItems.length > 0 ? (
+                  summary.popularItems.map((item, index) => (
+                    <Group key={index} justify="space-between">
+                      <Group gap="xs">
+                        <Badge 
+                          color={index === 0 ? "gold" : index === 1 ? "gray" : "orange"} 
+                          variant="filled" 
+                          size="sm"
+                        >
+                          {index + 1}
+                        </Badge>
+                        <Text size="sm">{item.name}</Text>
+                      </Group>
+                      <Text size="sm" fw={600}>{item.quantity}杯</Text>
+                    </Group>
+                  ))
+                ) : (
+                  <Text size="sm" c="dimmed">まだ注文がありません</Text>
+                )}
               </Stack>
             </Stack>
           </Paper>
         </Grid.Col>
       </Grid>
 
-      <Paper shadow="sm" p="lg" radius="md" withBorder>
-        <Stack gap="md">
-          <Title order={3} size="h4">
-            本日のシフト
-          </Title>
-          <Grid>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Group gap="xs">
-                <Badge color="green" variant="dot">営業中</Badge>
-                <Text size="sm">10:00 - 18:00</Text>
-              </Group>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Group gap="xs">
-                <Text size="sm" fw={500}>店長:</Text>
-                <Text size="sm">山田太郎</Text>
-              </Group>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Group gap="xs">
-                <Text size="sm" fw={500}>スタッフ:</Text>
-                <Text size="sm">8名</Text>
-              </Group>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <Group gap="xs">
-                <Text size="sm" fw={500}>次の休憩:</Text>
-                <Text size="sm">14:00</Text>
-              </Group>
-            </Grid.Col>
-          </Grid>
-        </Stack>
-      </Paper>
     </Stack>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   AppShell,
   Title,
@@ -17,6 +17,7 @@ import { Socket, io } from "socket.io-client";
 import { SocketContext } from "../_contexts/SocketContext";
 import { Prisma } from "@prisma/client";
 import { LoadingContext } from "../_contexts/LoadingContext";
+import { Summary } from "@/types/types";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [opened, { toggle, close }] = useDisclosure();
@@ -34,19 +35,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       };
     }>[]
   >([]);
-  const [summary, setSummary] = useState<{
-    totalSales: number;
-    totalOrders: number;
-  }>({
+  const [summary, setSummary] = useState<Summary>({
     totalSales: 0,
     totalOrders: 0,
+    totalQuantity: 0,
+    popularItems: [],
   });
   const [socket, setSocket] = useState<Socket | null>(null);
 
-  const [loading, setLoading] = useState(false);
+  const [loadingCount, setLoadingCount] = useState(0);
+  const loading = loadingCount > 0;
+  const startLoading = useCallback(
+    () => setLoadingCount((prev) => prev + 1),
+    []
+  );
+  const stopLoading = useCallback(
+    () => setLoadingCount((prev) => prev - 1),
+    []
+  );
 
   useEffect(() => {
     (async () => {
+      startLoading();
       await fetch("http://localhost:3000/api/sockets", { method: "POST" });
       const s = io();
       s.connect();
@@ -55,12 +65,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         setSummary(data.summary);
       });
       setSocket(s);
+      stopLoading();
     })();
-  }, []);
+  }, [startLoading, stopLoading]);
 
   return (
     <SocketContext.Provider value={{ socket, orders, summary }}>
-      <LoadingContext.Provider value={{ loading, setLoading }}>
+      <LoadingContext.Provider value={{ loading, startLoading, stopLoading }}>
         <LoadingOverlay
           visible={loading}
           zIndex={1000}

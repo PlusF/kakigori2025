@@ -62,6 +62,31 @@ export default function SocketHandler(
           },
         },
       });
+      // Calculate popular items
+      const itemSales: Record<string, { name: string; quantity: number }> = {};
+      orders.forEach((order) => {
+        order.OrderItem.forEach((item) => {
+          const menuItemId = item.menuItemId;
+          if (!itemSales[menuItemId]) {
+            itemSales[menuItemId] = {
+              name: item.MenuItem.name,
+              quantity: 0,
+            };
+          }
+          itemSales[menuItemId].quantity += item.quantity;
+        });
+      });
+      
+      const popularItems = Object.values(itemSales)
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 3);
+
+      const totalQuantity = orders.reduce(
+        (acc, order) =>
+          acc + order.OrderItem.reduce((sum, item) => sum + item.quantity, 0),
+        0
+      );
+
       const summary = {
         totalSales: orders.reduce(
           (acc, order) =>
@@ -73,6 +98,8 @@ export default function SocketHandler(
           0
         ),
         totalOrders: orders.length,
+        totalQuantity,
+        popularItems,
       };
       io.emit("order", { orders, summary });
     });
@@ -91,6 +118,32 @@ export default function SocketHandler(
         },
       },
     });
+    
+    // Calculate popular items
+    const itemSales: Record<string, { name: string; quantity: number }> = {};
+    orders.forEach((order) => {
+      order.OrderItem.forEach((item) => {
+        const menuItemId = item.menuItemId;
+        if (!itemSales[menuItemId]) {
+          itemSales[menuItemId] = {
+            name: item.MenuItem.name,
+            quantity: 0,
+          };
+        }
+        itemSales[menuItemId].quantity += item.quantity;
+      });
+    });
+    
+    const popularItems = Object.values(itemSales)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 3);
+
+    const totalQuantity = orders.reduce(
+      (acc, order) =>
+        acc + order.OrderItem.reduce((sum, item) => sum + item.quantity, 0),
+      0
+    );
+
     io.emit("order", {
       orders,
       summary: {
@@ -103,10 +156,9 @@ export default function SocketHandler(
             ),
           0
         ),
-        totalOrders: orders.reduce(
-          (acc, order) => acc + order.OrderItem.length,
-          0
-        ),
+        totalOrders: orders.length,
+        totalQuantity,
+        popularItems,
       },
     });
   });

@@ -12,3 +12,10 @@ export type MenuItem = {
   sortOrder: number;
   image: string;
 };
+
+export type Summary = {
+  totalSales: number;
+  totalOrders: number;
+  totalQuantity: number;
+  popularItems: { name: string; quantity: number }[];
+};

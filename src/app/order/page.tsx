@@ -1,12 +1,12 @@
 "use client";
 
-import { 
-  Button, 
-  Card, 
-  Group, 
-  SimpleGrid, 
-  Text, 
-  Title, 
+import {
+  Button,
+  Card,
+  Group,
+  SimpleGrid,
+  Text,
+  Title,
   Stack,
   Badge,
   NumberInput,
@@ -15,9 +15,14 @@ import {
   ScrollArea,
   ActionIcon,
   Grid,
-  useMantineTheme
+  useMantineTheme,
 } from "@mantine/core";
-import { IconPlus, IconMinus, IconTrash, IconShoppingCart } from "@tabler/icons-react";
+import {
+  IconPlus,
+  IconMinus,
+  IconTrash,
+  IconShoppingCart,
+} from "@tabler/icons-react";
 import { MenuItem, OrderItem } from "@/types/types";
 import { useEffect, useState } from "react";
 import { getMenu } from "../_actions/getMenu";
@@ -27,7 +32,7 @@ import { LoadingContext } from "../_contexts/LoadingContext";
 
 export default function OrderPage() {
   const { socket } = useContext(SocketContext);
-  const { setLoading } = useContext(LoadingContext);
+  const { startLoading, stopLoading } = useContext(LoadingContext);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const theme = useMantineTheme();
@@ -35,29 +40,31 @@ export default function OrderPage() {
   useEffect(() => {
     (async () => {
       try {
-        setLoading(true);
+        startLoading();
         const data = await getMenu();
         setMenuItems(data);
       } catch (error) {
         console.error(error);
       } finally {
-        setLoading(false);
+        stopLoading();
       }
     })();
-  }, [setLoading]);
+  }, [startLoading, stopLoading]);
 
   const handleAddItem = (menuItem: MenuItem) => {
-    const existingItem = orderItems.find(item => item.menuItemId === menuItem.id);
+    const existingItem = orderItems.find(
+      (item) => item.menuItemId === menuItem.id
+    );
     if (existingItem) {
-      setOrderItems(prev => 
-        prev.map(item => 
-          item.menuItemId === menuItem.id 
+      setOrderItems((prev) =>
+        prev.map((item) =>
+          item.menuItemId === menuItem.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
       );
     } else {
-      setOrderItems(prev => [
+      setOrderItems((prev) => [
         ...prev,
         {
           menuItemId: menuItem.id,
@@ -70,20 +77,22 @@ export default function OrderPage() {
 
   const handleUpdateQuantity = (menuItemId: string, quantity: number) => {
     if (quantity <= 0) {
-      setOrderItems(prev => prev.filter(item => item.menuItemId !== menuItemId));
+      setOrderItems((prev) =>
+        prev.filter((item) => item.menuItemId !== menuItemId)
+      );
     } else {
-      setOrderItems(prev => 
-        prev.map(item => 
-          item.menuItemId === menuItemId 
-            ? { ...item, quantity }
-            : item
+      setOrderItems((prev) =>
+        prev.map((item) =>
+          item.menuItemId === menuItemId ? { ...item, quantity } : item
         )
       );
     }
   };
 
   const handleRemoveItem = (menuItemId: string) => {
-    setOrderItems(prev => prev.filter(item => item.menuItemId !== menuItemId));
+    setOrderItems((prev) =>
+      prev.filter((item) => item.menuItemId !== menuItemId)
+    );
   };
 
   const totalAmount = orderItems.reduce(
@@ -96,7 +105,7 @@ export default function OrderPage() {
       <Title order={1} size="h1" c={theme.primaryColor}>
         注文
       </Title>
-      
+
       <Grid gutter="xl">
         <Grid.Col span={{ base: 12, md: 8 }}>
           <Stack gap="md">
@@ -105,22 +114,18 @@ export default function OrderPage() {
             </Title>
             <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
               {menuItems.map((menuItem) => (
-                <Card 
-                  key={menuItem.id} 
-                  shadow="sm" 
-                  padding="lg" 
-                  radius="md" 
+                <Card
+                  key={menuItem.id}
+                  shadow="sm"
+                  padding="lg"
+                  radius="md"
                   withBorder
                 >
                   <Stack gap="sm">
                     <Text size="lg" fw={600}>
                       {menuItem.name}
                     </Text>
-                    <Badge 
-                      size="lg" 
-                      variant="light" 
-                      color={theme.primaryColor}
-                    >
+                    <Badge size="lg" variant="light" color={theme.primaryColor}>
                       {menuItem.price}円
                     </Badge>
                     <Button
@@ -149,9 +154,9 @@ export default function OrderPage() {
                   {orderItems.length} 品
                 </Badge>
               </Group>
-              
+
               <Divider />
-              
+
               {orderItems.length === 0 ? (
                 <Text c="dimmed" ta="center" py="xl">
                   カートは空です
@@ -169,32 +174,47 @@ export default function OrderPage() {
                             </Text>
                           </Stack>
                           <Group gap="xs">
-                            <ActionIcon 
-                              size="sm" 
+                            <ActionIcon
+                              size="sm"
                               variant="light"
-                              onClick={() => handleUpdateQuantity(item.menuItemId, item.quantity - 1)}
+                              onClick={() =>
+                                handleUpdateQuantity(
+                                  item.menuItemId,
+                                  item.quantity - 1
+                                )
+                              }
                             >
                               <IconMinus size={14} />
                             </ActionIcon>
                             <NumberInput
                               value={item.quantity}
-                              onChange={(value) => handleUpdateQuantity(item.menuItemId, Number(value))}
+                              onChange={(value) =>
+                                handleUpdateQuantity(
+                                  item.menuItemId,
+                                  Number(value)
+                                )
+                              }
                               min={1}
                               max={99}
                               w={60}
                               size="sm"
                               hideControls
                             />
-                            <ActionIcon 
-                              size="sm" 
+                            <ActionIcon
+                              size="sm"
                               variant="light"
-                              onClick={() => handleUpdateQuantity(item.menuItemId, item.quantity + 1)}
+                              onClick={() =>
+                                handleUpdateQuantity(
+                                  item.menuItemId,
+                                  item.quantity + 1
+                                )
+                              }
                             >
                               <IconPlus size={14} />
                             </ActionIcon>
-                            <ActionIcon 
-                              size="sm" 
-                              color="red" 
+                            <ActionIcon
+                              size="sm"
+                              color="red"
                               variant="light"
                               onClick={() => handleRemoveItem(item.menuItemId)}
                             >
@@ -207,9 +227,9 @@ export default function OrderPage() {
                   </Stack>
                 </ScrollArea>
               )}
-              
+
               <Divider />
-              
+
               <Group justify="space-between">
                 <Text size="lg" fw={600}>
                   合計金額
@@ -218,16 +238,14 @@ export default function OrderPage() {
                   {totalAmount.toLocaleString()}円
                 </Text>
               </Group>
-              
+
               <Button
                 fullWidth
                 size="lg"
                 leftSection={<IconShoppingCart size={20} />}
                 onClick={() => {
                   if (orderItems.length === 0) return;
-                  setLoading(true);
                   socket?.emit("order", { orderItems });
-                  setLoading(false);
                   setOrderItems([]);
                 }}
                 disabled={orderItems.length === 0}
