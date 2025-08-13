@@ -61,7 +61,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       const s = io();
       s.connect();
       s.on("order", (data) => {
-        setOrders((prev) => [...prev, ...data.orders]);
+        setOrders(data.orders);
         setSummary(data.summary);
       });
       setSocket(s);

@@ -6,6 +6,13 @@ import { Server as SocketServer } from "socket.io";
 import { prisma } from "@/lib/prisma";
 import { OrderItem } from "@/types/types";
 import cors from "cors";
+import { Prisma } from "@prisma/client";
+
+type OrderItemWithMenuItem = Prisma.OrderItemGetPayload<{
+  include: {
+    MenuItem: true;
+  };
+}>;
 
 // Next.jsの型定義を拡張してSocket.IOの型定義を追加
 type ReseponseWebSocket = NextApiResponse & {
@@ -38,6 +45,154 @@ export default function SocketHandler(
   io.on("connection", async (socket) => {
     const clientId = socket.id;
     console.log(`A client connected. ID: ${clientId}`);
+
+    // 注文の更新を処理
+    socket.on("updateOrder", async (data) => {
+      console.log("updateOrder", data);
+      try {
+        // 既存の注文アイテムを削除
+        await prisma.orderItem.deleteMany({
+          where: { orderId: data.id }
+        });
+
+        // 新しい注文アイテムを作成
+        await prisma.order.update({
+          where: { id: data.id },
+          data: {
+            total: data.total,
+            OrderItem: {
+              create: data.OrderItem.map((item: OrderItemWithMenuItem) => ({
+                id: crypto.randomUUID(),
+                menuItemId: item.menuItemId,
+                quantity: item.quantity,
+              })),
+            },
+          },
+        });
+
+        // 更新後の全注文を取得して配信
+        const orders = await prisma.order.findMany({
+          include: {
+            OrderItem: {
+              include: {
+                MenuItem: true,
+              },
+            },
+          },
+        });
+
+        const itemSales: Record<string, { name: string; quantity: number }> = {};
+        orders.forEach((order) => {
+          order.OrderItem.forEach((item) => {
+            const menuItemId = item.menuItemId;
+            if (!itemSales[menuItemId]) {
+              itemSales[menuItemId] = {
+                name: item.MenuItem.name,
+                quantity: 0,
+              };
+            }
+            itemSales[menuItemId].quantity += item.quantity;
+          });
+        });
+
+        const popularItems = Object.values(itemSales)
+          .sort((a, b) => b.quantity - a.quantity)
+          .slice(0, 3);
+
+        const totalQuantity = orders.reduce(
+          (acc, order) =>
+            acc + order.OrderItem.reduce((sum, item) => sum + item.quantity, 0),
+          0
+        );
+
+        const summary = {
+          totalSales: orders.reduce(
+            (acc, order) =>
+              acc +
+              order.OrderItem.reduce(
+                (acc, item) => acc + item.MenuItem.price * item.quantity,
+                0
+              ),
+            0
+          ),
+          totalOrders: orders.length,
+          totalQuantity,
+          popularItems,
+        };
+        io.emit("order", { orders, summary });
+      } catch (error) {
+        console.error("Error updating order:", error);
+      }
+    });
+
+    // 注文の削除を処理
+    socket.on("deleteOrder", async (data) => {
+      console.log("deleteOrder", data);
+      try {
+        // 注文アイテムを削除（カスケード削除の設定がない場合）
+        await prisma.orderItem.deleteMany({
+          where: { orderId: data.orderId }
+        });
+
+        // 注文を削除
+        await prisma.order.delete({
+          where: { id: data.orderId }
+        });
+
+        // 削除後の全注文を取得して配信
+        const orders = await prisma.order.findMany({
+          include: {
+            OrderItem: {
+              include: {
+                MenuItem: true,
+              },
+            },
+          },
+        });
+
+        const itemSales: Record<string, { name: string; quantity: number }> = {};
+        orders.forEach((order) => {
+          order.OrderItem.forEach((item) => {
+            const menuItemId = item.menuItemId;
+            if (!itemSales[menuItemId]) {
+              itemSales[menuItemId] = {
+                name: item.MenuItem.name,
+                quantity: 0,
+              };
+            }
+            itemSales[menuItemId].quantity += item.quantity;
+          });
+        });
+
+        const popularItems = Object.values(itemSales)
+          .sort((a, b) => b.quantity - a.quantity)
+          .slice(0, 3);
+
+        const totalQuantity = orders.reduce(
+          (acc, order) =>
+            acc + order.OrderItem.reduce((sum, item) => sum + item.quantity, 0),
+          0
+        );
+
+        const summary = {
+          totalSales: orders.reduce(
+            (acc, order) =>
+              acc +
+              order.OrderItem.reduce(
+                (acc, item) => acc + item.MenuItem.price * item.quantity,
+                0
+              ),
+            0
+          ),
+          totalOrders: orders.length,
+          totalQuantity,
+          popularItems,
+        };
+        io.emit("order", { orders, summary });
+      } catch (error) {
+        console.error("Error deleting order:", error);
+      }
+    });
 
     // メッセージを受信したら、全クライアントに送信する
     socket.on("order", async (data) => {

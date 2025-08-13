@@ -17,7 +17,6 @@ import { SocketContext } from "./_contexts/SocketContext";
 import { 
   IconCurrencyYen, 
   IconShoppingCart, 
-  IconPackage, 
   IconUsers 
 } from "@tabler/icons-react";
 
@@ -39,15 +38,6 @@ export default function Home() {
       icon: IconShoppingCart,
       color: "blue",
       description: "累計注文件数"
-    },
-    {
-      title: "平均単価",
-      value: summary.totalOrders > 0 
-        ? `${Math.round(summary.totalSales / summary.totalOrders).toLocaleString()}円`
-        : "0円",
-      icon: IconPackage,
-      color: "grape",
-      description: "注文あたりの平均金額"
     },
     {
       title: "販売個数",

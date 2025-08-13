@@ -1,4 +1,5 @@
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 
 import React from "react";
 import {
@@ -7,6 +8,7 @@ import {
   mantineHtmlProps,
   MantineProvider,
 } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import AppLayout from "./_components/App";
 
 export const metadata = {
@@ -35,6 +37,7 @@ export default function RootLayout({
       </head>
       <body>
         <MantineProvider theme={theme}>
+          <Notifications />
           <AppLayout>{children}</AppLayout>
         </MantineProvider>
       </body>

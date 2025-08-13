@@ -11,8 +11,6 @@ This is a Japanese shaved ice (kakigori) ordering system built with Next.js 15 a
 ### Development
 
 ```bash
-npm run dev          # Start development server with Turbopack
-npm start            # Start production server
 npm run lint         # Run ESLint
 ```
 
