@@ -5,11 +5,14 @@ import type { Server as HttpServer } from "http";
 import { Server as SocketServer } from "socket.io";
 import { prisma } from "@/lib/prisma";
 import { OrderItem } from "@/types/types";
+import cors from "cors";
 
 // Next.jsの型定義を拡張してSocket.IOの型定義を追加
 type ReseponseWebSocket = NextApiResponse & {
   socket: NetSocket & { server: HttpServer & { io?: SocketServer } };
 };
+
+const corsMiddleware = cors();
 
 // Next.jsのAPIルーティングの入り口となる関数
 export default function SocketHandler(
@@ -76,7 +79,7 @@ export default function SocketHandler(
           itemSales[menuItemId].quantity += item.quantity;
         });
       });
-      
+
       const popularItems = Object.values(itemSales)
         .sort((a, b) => b.quantity - a.quantity)
         .slice(0, 3);
@@ -118,7 +121,7 @@ export default function SocketHandler(
         },
       },
     });
-    
+
     // Calculate popular items
     const itemSales: Record<string, { name: string; quantity: number }> = {};
     orders.forEach((order) => {
@@ -133,7 +136,7 @@ export default function SocketHandler(
         itemSales[menuItemId].quantity += item.quantity;
       });
     });
-    
+
     const popularItems = Object.values(itemSales)
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 3);
@@ -163,6 +166,8 @@ export default function SocketHandler(
     });
   });
 
-  res.socket.server.io = io;
-  res.end();
+  corsMiddleware(req, res, () => {
+    res.socket.server.io = io;
+    res.end();
+  });
 }
