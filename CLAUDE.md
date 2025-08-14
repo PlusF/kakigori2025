@@ -84,3 +84,5 @@ Required in `.env`:
 - ESLint is configured for Next.js
 - Turbopack is used for faster development builds
 - Socket.IO server runs on the same port as Next.js in development
+
+- do not run server anymore

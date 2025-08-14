@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   AppShell,
   Title,
@@ -13,35 +13,12 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import Navbar from "./Navbar";
 import { useRouter } from "next/navigation";
-import { Socket, io } from "socket.io-client";
-import { SocketContext } from "../_contexts/SocketContext";
-import { Prisma } from "@prisma/client";
 import { LoadingContext } from "../_contexts/LoadingContext";
-import { Summary } from "@/types/types";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [opened, { toggle, close }] = useDisclosure();
   const router = useRouter();
   const theme = useMantineTheme();
-
-  const [orders, setOrders] = useState<
-    Prisma.OrderGetPayload<{
-      include: {
-        OrderItem: {
-          include: {
-            MenuItem: true;
-          };
-        };
-      };
-    }>[]
-  >([]);
-  const [summary, setSummary] = useState<Summary>({
-    totalSales: 0,
-    totalOrders: 0,
-    totalQuantity: 0,
-    popularItems: [],
-  });
-  const [socket, setSocket] = useState<Socket | null>(null);
 
   const [loadingCount, setLoadingCount] = useState(0);
   const loading = loadingCount > 0;
@@ -54,107 +31,56 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     []
   );
 
-  useEffect(() => {
-    (async () => {
-      startLoading();
-      try {
-        await fetch("/api/sockets", { method: "POST" });
-        const socketUrl =
-          typeof window !== "undefined" ? window.location.origin : "";
-        const s = io(socketUrl, {
-          path: "/api/sockets",
-          transports: ["websocket", "polling"],
-          upgrade: true,
-          reconnection: true,
-          reconnectionAttempts: 10,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000,
-          timeout: 20000,
-        });
-        s.connect();
-        s.on("order", (data) => {
-          setOrders(data.orders);
-          setSummary(data.summary);
-        });
-        s.on("connect", () => {
-          console.log("Socket connected");
-        });
-        s.on("connect_error", (error) => {
-          console.error("Socket connection error:", error);
-        });
-        s.on("disconnect", (reason) => {
-          console.log("Socket disconnected:", reason);
-        });
-        s.on("reconnect", (attemptNumber) => {
-          console.log("Socket reconnected after", attemptNumber, "attempts");
-        });
-        s.on("reconnect_attempt", (attemptNumber) => {
-          console.log("Socket reconnect attempt", attemptNumber);
-        });
-        s.on("reconnect_error", (error) => {
-          console.error("Socket reconnect error:", error);
-        });
-        s.on("reconnect_failed", () => {
-          console.error("Socket reconnect failed");
-        });
-        setSocket(s);
-      } catch (error) {
-        console.error("Socket connection error:", error);
-      } finally {
-        stopLoading();
-      }
-    })();
-  }, [startLoading, stopLoading]);
 
   return (
-    <SocketContext.Provider value={{ socket, orders, summary }}>
-      <LoadingContext.Provider value={{ loading, startLoading, stopLoading }}>
-        <LoadingOverlay
-          visible={loading}
-          zIndex={1000}
-          overlayProps={{ radius: "sm", blur: 2 }}
-        />
-        <AppShell
-          padding="md"
-          header={{ height: 60 }}
-          navbar={{
-            width: 200,
-            breakpoint: "sm",
-            collapsed: { mobile: !opened },
-          }}
-        >
-          <AppShell.Header>
-            <Group h="100%" px="md">
-              <Burger
-                opened={opened}
-                onClick={toggle}
-                hiddenFrom="sm"
-                size="sm"
-              />
-              <Title
-                order={1}
-                size="h2"
-                onClick={() => router.push("/")}
-                style={{
-                  cursor: "pointer",
-                  color: theme.colors[theme.primaryColor][6],
-                  fontWeight: 700,
-                }}
-              >
-                氷川かき氷
-              </Title>
-            </Group>
-          </AppShell.Header>
+    <LoadingContext.Provider value={{ loading, startLoading, stopLoading }}>
+      <LoadingOverlay
+        visible={loading}
+        zIndex={9999}
+        overlayProps={{ radius: "sm", blur: 2 }}
+        pos="fixed"
+        inset={0}
+      />
+      <AppShell
+        padding="md"
+        header={{ height: 60 }}
+        navbar={{
+          width: 200,
+          breakpoint: "sm",
+          collapsed: { mobile: !opened },
+        }}
+      >
+        <AppShell.Header>
+          <Group h="100%" px="md">
+            <Burger
+              opened={opened}
+              onClick={toggle}
+              hiddenFrom="sm"
+              size="sm"
+            />
+            <Title
+              order={1}
+              size="h2"
+              onClick={() => router.push("/")}
+              style={{
+                cursor: "pointer",
+                color: theme.colors[theme.primaryColor][6],
+                fontWeight: 700,
+              }}
+            >
+              氷川かき氷
+            </Title>
+          </Group>
+        </AppShell.Header>
 
-          <Navbar onNavigate={close} />
+        <Navbar onNavigate={close} />
 
-          <AppShell.Main>
-            <Container size="lg" py="xl">
-              {children}
-            </Container>
-          </AppShell.Main>
-        </AppShell>
-      </LoadingContext.Provider>
-    </SocketContext.Provider>
+        <AppShell.Main>
+          <Container size="lg" py="xl">
+            {children}
+          </Container>
+        </AppShell.Main>
+      </AppShell>
+    </LoadingContext.Provider>
   );
 }

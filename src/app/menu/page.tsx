@@ -10,6 +10,7 @@ import {
   Image,
   useMantineTheme,
   Paper,
+  Group,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { getMenu } from "../_actions/getMenu";
@@ -47,7 +48,7 @@ export default function Menu() {
           <Card
             key={menuItem.id}
             shadow="sm"
-            padding="lg"
+            padding="md"
             radius="md"
             withBorder
           >
@@ -63,19 +64,13 @@ export default function Menu() {
             )}
 
             <Stack gap="sm" mt={menuItem.image ? "md" : 0}>
-              <Text size="lg" fw={600}>
-                {menuItem.name}
-              </Text>
+              <Group justify="space-between">
+                <Text size="sm">{menuItem.name}</Text>
 
-              <Badge
-                size="xl"
-                variant="filled"
-                color={theme.primaryColor}
-                radius="md"
-                fullWidth
-              >
-                {menuItem.price}円
-              </Badge>
+                <Badge color={theme.primaryColor} size="xs">
+                  {menuItem.price}円
+                </Badge>
+              </Group>
             </Stack>
           </Card>
         ))}

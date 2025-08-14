@@ -16,21 +16,16 @@ import {
   Modal,
   NumberInput,
 } from "@mantine/core";
-import { SocketContext } from "../_contexts/SocketContext";
-import { useContext, useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import { IconShoppingCart, IconReceipt, IconEdit, IconTrash } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
+import { OrderWithItems } from "../_actions/types";
+import { getOrders } from "../_actions/getOrders";
+import { updateOrder } from "../_actions/updateOrder";
+import { deleteOrder } from "../_actions/deleteOrder";
+import { useRouter } from "next/navigation";
+import { LoadingContext } from "../_contexts/LoadingContext";
 import { Prisma } from "@prisma/client";
-
-type OrderWithItems = Prisma.OrderGetPayload<{
-  include: {
-    OrderItem: {
-      include: {
-        MenuItem: true;
-      };
-    };
-  };
-}>;
 
 type OrderItemWithMenuItem = Prisma.OrderItemGetPayload<{
   include: {
@@ -39,12 +34,43 @@ type OrderItemWithMenuItem = Prisma.OrderItemGetPayload<{
 }>;
 
 export default function OrderHistory() {
-  const { orders, socket } = useContext(SocketContext);
+  const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const theme = useMantineTheme();
   const [editModalOpened, setEditModalOpened] = useState(false);
   const [deleteModalOpened, setDeleteModalOpened] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderWithItems | null>(null);
   const [editedItems, setEditedItems] = useState<OrderItemWithMenuItem[]>([]);
+  const router = useRouter();
+  const { startLoading, stopLoading } = useContext(LoadingContext);
+
+  useEffect(() => {
+    let isInitial = true;
+    
+    const fetchOrders = async () => {
+      if (isInitial) {
+        startLoading();
+      }
+      try {
+        const orders = await getOrders();
+        setOrders(orders);
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+      } finally {
+        if (isInitial) {
+          stopLoading();
+          isInitial = false;
+        }
+      }
+    };
+    
+    fetchOrders();
+    
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [startLoading, stopLoading]);
 
   const formatDate = (date: Date | string) => {
     const d = new Date(date);
@@ -71,35 +97,61 @@ export default function OrderHistory() {
     setDeleteModalOpened(true);
   };
 
-  const handleUpdateOrder = () => {
-    if (!socket || !selectedOrder) return;
+  const handleUpdateOrder = async () => {
+    if (!selectedOrder) return;
 
-    const updatedOrder = {
-      ...selectedOrder,
-      OrderItem: editedItems,
-      total: editedItems.reduce((acc, item) => 
-        acc + item.MenuItem.price * item.quantity, 0)
-    };
-
-    socket.emit("updateOrder", updatedOrder);
-    setEditModalOpened(false);
-    notifications.show({
-      title: "更新完了",
-      message: "注文が更新されました",
-      color: "green",
-    });
+    startLoading();
+    try {
+      const orderItems = editedItems.map(item => ({
+        menuItemId: item.menuItemId,
+        quantity: item.quantity
+      }));
+      
+      const result = await updateOrder(selectedOrder.id, orderItems);
+      setOrders(result);
+      setEditModalOpened(false);
+      notifications.show({
+        title: "更新完了",
+        message: "注文が更新されました",
+        color: "green",
+      });
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to update order:", error);
+      notifications.show({
+        title: "エラー",
+        message: "注文の更新に失敗しました",
+        color: "red",
+      });
+    } finally {
+      stopLoading();
+    }
   };
 
-  const handleDeleteOrder = () => {
-    if (!socket || !selectedOrder) return;
+  const handleDeleteOrder = async () => {
+    if (!selectedOrder) return;
 
-    socket.emit("deleteOrder", { orderId: selectedOrder.id });
-    setDeleteModalOpened(false);
-    notifications.show({
-      title: "削除完了",
-      message: "注文が削除されました",
-      color: "red",
-    });
+    startLoading();
+    try {
+      const result = await deleteOrder(selectedOrder.id);
+      setOrders(result);
+      setDeleteModalOpened(false);
+      notifications.show({
+        title: "削除完了",
+        message: "注文が削除されました",
+        color: "red",
+      });
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to delete order:", error);
+      notifications.show({
+        title: "エラー",
+        message: "注文の削除に失敗しました",
+        color: "red",
+      });
+    } finally {
+      stopLoading();
+    }
   };
 
   const updateItemQuantity = (itemId: string, quantity: number) => {
@@ -149,15 +201,17 @@ export default function OrderHistory() {
                       {formatDate(order.createdAt)}
                     </Badge>
                     <ActionIcon
-                      variant="light"
+                      variant="subtle"
                       color="blue"
+                      radius="md"
                       onClick={() => handleEditClick(order)}
                     >
                       <IconEdit size={16} />
                     </ActionIcon>
                     <ActionIcon
-                      variant="light"
+                      variant="subtle"
                       color="red"
+                      radius="md"
                       onClick={() => handleDeleteClick(order)}
                     >
                       <IconTrash size={16} />
@@ -263,10 +317,10 @@ export default function OrderHistory() {
             </Group>
             
             <Group justify="flex-end" gap="sm">
-              <Button variant="default" onClick={() => setEditModalOpened(false)}>
+              <Button variant="light" radius="md" onClick={() => setEditModalOpened(false)}>
                 キャンセル
               </Button>
-              <Button onClick={handleUpdateOrder}>
+              <Button variant="filled" radius="md" onClick={handleUpdateOrder}>
                 更新
               </Button>
             </Group>
@@ -284,10 +338,10 @@ export default function OrderHistory() {
             この注文を削除してもよろしいですか？この操作は取り消せません。
           </Text>
           <Group justify="flex-end" gap="sm">
-            <Button variant="default" onClick={() => setDeleteModalOpened(false)}>
+            <Button variant="light" radius="md" onClick={() => setDeleteModalOpened(false)}>
               キャンセル
             </Button>
-            <Button color="red" onClick={handleDeleteOrder}>
+            <Button color="red" variant="filled" radius="md" onClick={handleDeleteOrder}>
               削除
             </Button>
           </Group>

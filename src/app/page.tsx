@@ -12,36 +12,96 @@ import {
   ThemeIcon,
   Badge
 } from "@mantine/core";
-import { useContext } from "react";
-import { SocketContext } from "./_contexts/SocketContext";
 import { 
   IconCurrencyYen, 
   IconShoppingCart, 
   IconUsers 
 } from "@tabler/icons-react";
+import { getOrders } from "@/app/_actions/getOrders";
+import { useEffect, useState, useContext } from "react";
+import { LoadingContext } from "@/app/_contexts/LoadingContext";
 
 export default function Home() {
-  const { summary } = useContext(SocketContext);
+  const [totalSales, setTotalSales] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalQuantity, setTotalQuantity] = useState(0);
+  const [popularItems, setPopularItems] = useState<{ name: string; quantity: number }[]>([]);
   const theme = useMantineTheme();
+  const { startLoading, stopLoading } = useContext(LoadingContext);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (isInitialLoad) {
+        startLoading();
+      }
+      try {
+        const orders = await getOrders();
+      
+      const itemSales: Record<string, { name: string; quantity: number }> = {};
+      let totalSalesCalc = 0;
+      let totalQuantityCalc = 0;
+
+      orders.forEach((order) => {
+        order.OrderItem.forEach((item) => {
+          const menuItemId = item.menuItemId;
+          if (!itemSales[menuItemId]) {
+            itemSales[menuItemId] = {
+              name: item.MenuItem.name,
+              quantity: 0,
+            };
+          }
+          itemSales[menuItemId].quantity += item.quantity;
+          totalQuantityCalc += item.quantity;
+          totalSalesCalc += item.MenuItem.price * item.quantity;
+        });
+      });
+
+      const popularItemsCalc = Object.values(itemSales)
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 3);
+
+      setTotalSales(totalSalesCalc);
+      setTotalOrders(orders.length);
+      setTotalQuantity(totalQuantityCalc);
+      setPopularItems(popularItemsCalc);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        if (isInitialLoad) {
+          stopLoading();
+          setIsInitialLoad(false);
+        }
+      }
+    };
+    
+    fetchData();
+    
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [startLoading, stopLoading, isInitialLoad]);
 
   const stats = [
     {
       title: "総売り上げ",
-      value: `${summary.totalSales.toLocaleString()}円`,
+      value: `${totalSales.toLocaleString()}円`,
       icon: IconCurrencyYen,
       color: "teal",
       description: "累計売上高"
     },
     {
       title: "注文数",
-      value: `${summary.totalOrders}件`,
+      value: `${totalOrders}件`,
       icon: IconShoppingCart,
       color: "blue",
       description: "累計注文件数"
     },
     {
       title: "販売個数",
-      value: `${summary.totalQuantity || 0}個`,
+      value: `${totalQuantity || 0}個`,
       icon: IconUsers,
       color: "orange",
       description: "累計販売個数"
@@ -92,18 +152,18 @@ export default function Home() {
                 <Title order={3} size="h4">
                   売上目標達成率
                 </Title>
-                <Badge color={summary.totalSales >= 500000 ? "green" : "blue"} variant="light">
-                  {Math.min(Math.round((summary.totalSales / 500000) * 100), 100)}%
+                <Badge color={totalSales >= 500000 ? "green" : "blue"} variant="light">
+                  {Math.min(Math.round((totalSales / 500000) * 100), 100)}%
                 </Badge>
               </Group>
               <Progress 
-                value={Math.min(Math.round((summary.totalSales / 500000) * 100), 100)} 
+                value={Math.min(Math.round((totalSales / 500000) * 100), 100)} 
                 size="xl" 
                 radius="xl" 
                 color={theme.primaryColor}
               />
               <Text size="sm" c="dimmed">
-                目標: 500,000円 / 現在: {summary.totalSales.toLocaleString()}円
+                目標: 500,000円 / 現在: {totalSales.toLocaleString()}円
               </Text>
             </Stack>
           </Paper>
@@ -116,8 +176,8 @@ export default function Home() {
                 人気メニュー TOP3
               </Title>
               <Stack gap="xs">
-                {summary.popularItems && summary.popularItems.length > 0 ? (
-                  summary.popularItems.map((item, index) => (
+                {popularItems && popularItems.length > 0 ? (
+                  popularItems.map((item, index) => (
                     <Group key={index} justify="space-between">
                       <Group gap="xs">
                         <Badge 
