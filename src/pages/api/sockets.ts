@@ -4,7 +4,7 @@ import type { Socket as NetSocket } from "net";
 import type { Server as HttpServer } from "http";
 import { Server as SocketServer } from "socket.io";
 import { prisma } from "@/lib/prisma";
-import { OrderItem } from "@/types/types";
+import { OrderItem, Summary } from "@/types/types";
 import cors from "cors";
 import { Prisma } from "@prisma/client";
 
@@ -30,9 +30,9 @@ type ReseponseWebSocket = NextApiResponse & {
 };
 
 // サマリー情報を生成する共通関数
-function createSummary(orders: OrderWithItems[]) {
+function createSummary(orders: OrderWithItems[]): Summary {
   const itemSales: Record<string, { name: string; quantity: number }> = {};
-  
+
   orders.forEach((order) => {
     order.OrderItem.forEach((item) => {
       const menuItemId = item.menuItemId;

@@ -57,15 +57,31 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       startLoading();
-      await fetch("/api/sockets", { method: "POST" });
-      const s = io();
-      s.connect();
-      s.on("order", (data) => {
-        setOrders(data.orders);
-        setSummary(data.summary);
-      });
-      setSocket(s);
-      stopLoading();
+      try {
+        await fetch("/api/sockets", { method: "POST" });
+        const socketUrl =
+          typeof window !== "undefined" ? window.location.origin : "";
+        const s = io(socketUrl, {
+          path: "/api/sockets",
+          transports: ["websocket", "polling"],
+        });
+        s.connect();
+        s.on("order", (data) => {
+          setOrders(data.orders);
+          setSummary(data.summary);
+        });
+        s.on("connect", () => {
+          console.log("Socket connected");
+        });
+        s.on("connect_error", (error) => {
+          console.error("Socket connection error:", error);
+        });
+        setSocket(s);
+      } catch (error) {
+        console.error("Socket connection error:", error);
+      } finally {
+        stopLoading();
+      }
     })();
   }, [startLoading, stopLoading]);
 

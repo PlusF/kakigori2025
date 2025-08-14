@@ -244,6 +244,7 @@ export default function OrderPage() {
                 size="lg"
                 leftSection={<IconShoppingCart size={20} />}
                 onClick={() => {
+                  console.log("orderItems", orderItems);
                   if (orderItems.length === 0) return;
                   socket?.emit("order", { orderItems });
                   setOrderItems([]);
