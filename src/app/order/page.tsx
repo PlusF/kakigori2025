@@ -12,7 +12,6 @@ import {
   NumberInput,
   Paper,
   Divider,
-  ScrollArea,
   ActionIcon,
   Grid,
   useMantineTheme,
@@ -113,13 +112,17 @@ export default function OrderPage() {
             <Title order={2} size="h3">
               メニュー
             </Title>
-            <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md" style={{ overflow: "visible" }}>
+            <SimpleGrid
+              cols={{ base: 1, sm: 2, lg: 3 }}
+              spacing="md"
+              style={{ overflow: "visible" }}
+            >
               {menuItems.map((menuItem) => {
                 const cartItem = orderItems.find(
                   (item) => item.menuItemId === menuItem.id
                 );
                 const quantity = cartItem?.quantity || 0;
-                
+
                 return (
                   <Card
                     key={menuItem.id}
@@ -206,75 +209,73 @@ export default function OrderPage() {
                   カートは空です
                 </Text>
               ) : (
-                <ScrollArea h={300}>
-                  <Stack gap="sm">
-                    {orderItems.map((item) => (
-                      <Paper key={item.menuItemId} p="sm" withBorder>
-                        <Group justify="space-between" wrap="nowrap">
-                          <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-                            <Text fw={500} truncate>
-                              {item.MenuItem.name}
-                            </Text>
-                            <Text size="sm" c="dimmed">
-                              {item.MenuItem.price}円 × {item.quantity}
-                            </Text>
-                          </Stack>
-                          <Group gap="xs" wrap="nowrap">
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              radius="md"
-                              onClick={() =>
-                                handleUpdateQuantity(
-                                  item.menuItemId,
-                                  item.quantity - 1
-                                )
-                              }
-                            >
-                              <IconMinus size={14} />
-                            </ActionIcon>
-                            <NumberInput
-                              value={item.quantity}
-                              onChange={(value) =>
-                                handleUpdateQuantity(
-                                  item.menuItemId,
-                                  Number(value)
-                                )
-                              }
-                              min={1}
-                              max={99}
-                              w={30}
-                              size="xs"
-                              hideControls
-                            />
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              radius="md"
-                              onClick={() =>
-                                handleUpdateQuantity(
-                                  item.menuItemId,
-                                  item.quantity + 1
-                                )
-                              }
-                            >
-                              <IconPlus size={14} />
-                            </ActionIcon>
-                            <ActionIcon
-                              size="sm"
-                              color="red"
-                              variant="subtle"
-                              radius="md"
-                              onClick={() => handleRemoveItem(item.menuItemId)}
-                            >
-                              <IconTrash size={14} />
-                            </ActionIcon>
-                          </Group>
+                <Stack gap="sm">
+                  {orderItems.map((item) => (
+                    <Paper key={item.menuItemId} p="sm" withBorder>
+                      <Group justify="space-between" wrap="nowrap">
+                        <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+                          <Text fw={500} truncate>
+                            {item.MenuItem.name}
+                          </Text>
+                          <Text size="sm" c="dimmed">
+                            {item.MenuItem.price}円 × {item.quantity}
+                          </Text>
+                        </Stack>
+                        <Group gap="xs" wrap="nowrap">
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            radius="md"
+                            onClick={() =>
+                              handleUpdateQuantity(
+                                item.menuItemId,
+                                item.quantity - 1
+                              )
+                            }
+                          >
+                            <IconMinus size={14} />
+                          </ActionIcon>
+                          <NumberInput
+                            value={item.quantity}
+                            onChange={(value) =>
+                              handleUpdateQuantity(
+                                item.menuItemId,
+                                Number(value)
+                              )
+                            }
+                            min={1}
+                            max={99}
+                            w={30}
+                            size="xs"
+                            hideControls
+                          />
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            radius="md"
+                            onClick={() =>
+                              handleUpdateQuantity(
+                                item.menuItemId,
+                                item.quantity + 1
+                              )
+                            }
+                          >
+                            <IconPlus size={14} />
+                          </ActionIcon>
+                          <ActionIcon
+                            size="sm"
+                            color="red"
+                            variant="subtle"
+                            radius="md"
+                            onClick={() => handleRemoveItem(item.menuItemId)}
+                          >
+                            <IconTrash size={14} />
+                          </ActionIcon>
                         </Group>
-                      </Paper>
-                    ))}
-                  </Stack>
-                </ScrollArea>
+                      </Group>
+                    </Paper>
+                  ))}
+                </Stack>
               )}
 
               <Divider />

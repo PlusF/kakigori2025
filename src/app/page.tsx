@@ -20,6 +20,7 @@ import {
 import { getOrders } from "@/app/_actions/getOrders";
 import { useEffect, useState, useContext } from "react";
 import { LoadingContext } from "@/app/_contexts/LoadingContext";
+import { SalesChart } from "@/app/_components/SalesChart";
 
 export default function Home() {
   const [totalSales, setTotalSales] = useState(0);
@@ -200,6 +201,8 @@ export default function Home() {
           </Paper>
         </Grid.Col>
       </Grid>
+
+      <SalesChart />
 
     </Stack>
   );
