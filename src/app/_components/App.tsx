@@ -63,7 +63,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           typeof window !== "undefined" ? window.location.origin : "";
         const s = io(socketUrl, {
           path: "/api/sockets",
-          transports: ["websocket", "polling"],
+          transports: ["polling", "websocket"],
+          upgrade: false,
         });
         s.connect();
         s.on("order", (data) => {

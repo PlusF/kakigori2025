@@ -90,6 +90,8 @@ export default function SocketHandler(
   // Socket.IOのサーバーを作成する
   const io = new SocketServer(res.socket.server, {
     addTrailingSlash: false,
+    path: "/api/sockets",
+    transports: ["polling", "websocket"],
     cors: {
       origin: "*",
       methods: ["GET", "POST"],
