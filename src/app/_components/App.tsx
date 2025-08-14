@@ -63,8 +63,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           typeof window !== "undefined" ? window.location.origin : "";
         const s = io(socketUrl, {
           path: "/api/sockets",
-          transports: ["polling", "websocket"],
-          upgrade: false,
+          transports: ["websocket", "polling"],
+          upgrade: true,
+          reconnection: true,
+          reconnectionAttempts: 10,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 20000,
         });
         s.connect();
         s.on("order", (data) => {
@@ -76,6 +81,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         });
         s.on("connect_error", (error) => {
           console.error("Socket connection error:", error);
+        });
+        s.on("disconnect", (reason) => {
+          console.log("Socket disconnected:", reason);
+        });
+        s.on("reconnect", (attemptNumber) => {
+          console.log("Socket reconnected after", attemptNumber, "attempts");
+        });
+        s.on("reconnect_attempt", (attemptNumber) => {
+          console.log("Socket reconnect attempt", attemptNumber);
+        });
+        s.on("reconnect_error", (error) => {
+          console.error("Socket reconnect error:", error);
+        });
+        s.on("reconnect_failed", () => {
+          console.error("Socket reconnect failed");
         });
         setSocket(s);
       } catch (error) {

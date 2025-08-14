@@ -91,11 +91,15 @@ export default function SocketHandler(
   const io = new SocketServer(res.socket.server, {
     addTrailingSlash: false,
     path: "/api/sockets",
-    transports: ["polling", "websocket"],
+    transports: ["websocket", "polling"],
     cors: {
       origin: "*",
       methods: ["GET", "POST"],
     },
+    pingInterval: 25000,
+    pingTimeout: 60000,
+    upgradeTimeout: 10000,
+    allowEIO3: true,
   });
 
   // クライアントが接続してきたら、コネクションを確立する
