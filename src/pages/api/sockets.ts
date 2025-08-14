@@ -14,10 +14,65 @@ type OrderItemWithMenuItem = Prisma.OrderItemGetPayload<{
   };
 }>;
 
+type OrderWithItems = Prisma.OrderGetPayload<{
+  include: {
+    OrderItem: {
+      include: {
+        MenuItem: true;
+      };
+    };
+  };
+}>;
+
 // Next.jsの型定義を拡張してSocket.IOの型定義を追加
 type ReseponseWebSocket = NextApiResponse & {
   socket: NetSocket & { server: HttpServer & { io?: SocketServer } };
 };
+
+// サマリー情報を生成する共通関数
+function createSummary(orders: OrderWithItems[]) {
+  const itemSales: Record<string, { name: string; quantity: number }> = {};
+  
+  orders.forEach((order) => {
+    order.OrderItem.forEach((item) => {
+      const menuItemId = item.menuItemId;
+      if (!itemSales[menuItemId]) {
+        itemSales[menuItemId] = {
+          name: item.MenuItem.name,
+          quantity: 0,
+        };
+      }
+      itemSales[menuItemId].quantity += item.quantity;
+    });
+  });
+
+  const popularItems = Object.values(itemSales)
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 3);
+
+  const totalQuantity = orders.reduce(
+    (acc, order) =>
+      acc + order.OrderItem.reduce((sum, item) => sum + item.quantity, 0),
+    0
+  );
+
+  const totalSales = orders.reduce(
+    (acc, order) =>
+      acc +
+      order.OrderItem.reduce(
+        (acc, item) => acc + item.MenuItem.price * item.quantity,
+        0
+      ),
+    0
+  );
+
+  return {
+    totalSales,
+    totalOrders: orders.length,
+    totalQuantity,
+    popularItems,
+  };
+}
 
 const corsMiddleware = cors();
 
@@ -52,7 +107,7 @@ export default function SocketHandler(
       try {
         // 既存の注文アイテムを削除
         await prisma.orderItem.deleteMany({
-          where: { orderId: data.id }
+          where: { orderId: data.id },
         });
 
         // 新しい注文アイテムを作成
@@ -81,44 +136,7 @@ export default function SocketHandler(
           },
         });
 
-        const itemSales: Record<string, { name: string; quantity: number }> = {};
-        orders.forEach((order) => {
-          order.OrderItem.forEach((item) => {
-            const menuItemId = item.menuItemId;
-            if (!itemSales[menuItemId]) {
-              itemSales[menuItemId] = {
-                name: item.MenuItem.name,
-                quantity: 0,
-              };
-            }
-            itemSales[menuItemId].quantity += item.quantity;
-          });
-        });
-
-        const popularItems = Object.values(itemSales)
-          .sort((a, b) => b.quantity - a.quantity)
-          .slice(0, 3);
-
-        const totalQuantity = orders.reduce(
-          (acc, order) =>
-            acc + order.OrderItem.reduce((sum, item) => sum + item.quantity, 0),
-          0
-        );
-
-        const summary = {
-          totalSales: orders.reduce(
-            (acc, order) =>
-              acc +
-              order.OrderItem.reduce(
-                (acc, item) => acc + item.MenuItem.price * item.quantity,
-                0
-              ),
-            0
-          ),
-          totalOrders: orders.length,
-          totalQuantity,
-          popularItems,
-        };
+        const summary = createSummary(orders);
         io.emit("order", { orders, summary });
       } catch (error) {
         console.error("Error updating order:", error);
@@ -131,12 +149,12 @@ export default function SocketHandler(
       try {
         // 注文アイテムを削除（カスケード削除の設定がない場合）
         await prisma.orderItem.deleteMany({
-          where: { orderId: data.orderId }
+          where: { orderId: data.orderId },
         });
 
         // 注文を削除
         await prisma.order.delete({
-          where: { id: data.orderId }
+          where: { id: data.orderId },
         });
 
         // 削除後の全注文を取得して配信
@@ -150,44 +168,7 @@ export default function SocketHandler(
           },
         });
 
-        const itemSales: Record<string, { name: string; quantity: number }> = {};
-        orders.forEach((order) => {
-          order.OrderItem.forEach((item) => {
-            const menuItemId = item.menuItemId;
-            if (!itemSales[menuItemId]) {
-              itemSales[menuItemId] = {
-                name: item.MenuItem.name,
-                quantity: 0,
-              };
-            }
-            itemSales[menuItemId].quantity += item.quantity;
-          });
-        });
-
-        const popularItems = Object.values(itemSales)
-          .sort((a, b) => b.quantity - a.quantity)
-          .slice(0, 3);
-
-        const totalQuantity = orders.reduce(
-          (acc, order) =>
-            acc + order.OrderItem.reduce((sum, item) => sum + item.quantity, 0),
-          0
-        );
-
-        const summary = {
-          totalSales: orders.reduce(
-            (acc, order) =>
-              acc +
-              order.OrderItem.reduce(
-                (acc, item) => acc + item.MenuItem.price * item.quantity,
-                0
-              ),
-            0
-          ),
-          totalOrders: orders.length,
-          totalQuantity,
-          popularItems,
-        };
+        const summary = createSummary(orders);
         io.emit("order", { orders, summary });
       } catch (error) {
         console.error("Error deleting order:", error);
@@ -197,73 +178,39 @@ export default function SocketHandler(
     // メッセージを受信したら、全クライアントに送信する
     socket.on("order", async (data) => {
       console.log("order", data);
-      const result = await prisma.order.create({
-        data: {
-          id: crypto.randomUUID(),
-          total: data.orderItems.reduce(
-            (acc: number, item: OrderItem) =>
-              acc + item.MenuItem.price * item.quantity,
-            0
-          ),
-          OrderItem: {
-            create: data.orderItems.map((item: OrderItem) => ({
-              id: crypto.randomUUID(),
-              menuItemId: item.menuItemId,
-              quantity: item.quantity,
-            })),
-          },
-        },
-      });
-      console.log("result", result);
-      const orders = await prisma.order.findMany({
-        include: {
-          OrderItem: {
-            include: {
-              MenuItem: true,
-            },
-          },
-        },
-      });
-      // Calculate popular items
-      const itemSales: Record<string, { name: string; quantity: number }> = {};
-      orders.forEach((order) => {
-        order.OrderItem.forEach((item) => {
-          const menuItemId = item.menuItemId;
-          if (!itemSales[menuItemId]) {
-            itemSales[menuItemId] = {
-              name: item.MenuItem.name,
-              quantity: 0,
-            };
-          }
-          itemSales[menuItemId].quantity += item.quantity;
-        });
-      });
-
-      const popularItems = Object.values(itemSales)
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 3);
-
-      const totalQuantity = orders.reduce(
-        (acc, order) =>
-          acc + order.OrderItem.reduce((sum, item) => sum + item.quantity, 0),
-        0
-      );
-
-      const summary = {
-        totalSales: orders.reduce(
-          (acc, order) =>
-            acc +
-            order.OrderItem.reduce(
-              (acc, item) => acc + item.MenuItem.price * item.quantity,
+      try {
+        const result = await prisma.order.create({
+          data: {
+            id: crypto.randomUUID(),
+            total: data.orderItems.reduce(
+              (acc: number, item: OrderItem) =>
+                acc + item.MenuItem.price * item.quantity,
               0
             ),
-          0
-        ),
-        totalOrders: orders.length,
-        totalQuantity,
-        popularItems,
-      };
-      io.emit("order", { orders, summary });
+            OrderItem: {
+              create: data.orderItems.map((item: OrderItem) => ({
+                id: crypto.randomUUID(),
+                menuItemId: item.menuItemId,
+                quantity: item.quantity,
+              })),
+            },
+          },
+        });
+        console.log("result", result);
+        const orders = await prisma.order.findMany({
+          include: {
+            OrderItem: {
+              include: {
+                MenuItem: true,
+              },
+            },
+          },
+        });
+        const summary = createSummary(orders);
+        io.emit("order", { orders, summary });
+      } catch (error) {
+        console.error("Error creating order:", error);
+      }
     });
 
     // クライアントが切断した場合の処理
@@ -281,48 +228,8 @@ export default function SocketHandler(
       },
     });
 
-    // Calculate popular items
-    const itemSales: Record<string, { name: string; quantity: number }> = {};
-    orders.forEach((order) => {
-      order.OrderItem.forEach((item) => {
-        const menuItemId = item.menuItemId;
-        if (!itemSales[menuItemId]) {
-          itemSales[menuItemId] = {
-            name: item.MenuItem.name,
-            quantity: 0,
-          };
-        }
-        itemSales[menuItemId].quantity += item.quantity;
-      });
-    });
-
-    const popularItems = Object.values(itemSales)
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 3);
-
-    const totalQuantity = orders.reduce(
-      (acc, order) =>
-        acc + order.OrderItem.reduce((sum, item) => sum + item.quantity, 0),
-      0
-    );
-
-    io.emit("order", {
-      orders,
-      summary: {
-        totalSales: orders.reduce(
-          (acc, order) =>
-            acc +
-            order.OrderItem.reduce(
-              (acc, item) => acc + item.MenuItem.price * item.quantity,
-              0
-            ),
-          0
-        ),
-        totalOrders: orders.length,
-        totalQuantity,
-        popularItems,
-      },
-    });
+    const summary = createSummary(orders);
+    io.emit("order", { orders, summary });
   });
 
   corsMiddleware(req, res, () => {
