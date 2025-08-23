@@ -1,21 +1,21 @@
 "use client";
 
-import { 
-  Text, 
-  Title, 
-  Stack, 
-  Grid, 
-  Paper, 
-  Group, 
+import {
+  Text,
+  Title,
+  Stack,
+  Grid,
+  Paper,
+  Group,
   useMantineTheme,
   Progress,
   ThemeIcon,
-  Badge
+  Badge,
 } from "@mantine/core";
-import { 
-  IconCurrencyYen, 
-  IconShoppingCart, 
-  IconUsers 
+import {
+  IconCurrencyYen,
+  IconShoppingCart,
+  IconUsers,
 } from "@tabler/icons-react";
 import { getOrders } from "@/app/_actions/getOrders";
 import { useEffect, useState, useContext } from "react";
@@ -26,7 +26,9 @@ export default function Home() {
   const [totalSales, setTotalSales] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalQuantity, setTotalQuantity] = useState(0);
-  const [popularItems, setPopularItems] = useState<{ name: string; quantity: number }[]>([]);
+  const [popularItems, setPopularItems] = useState<
+    { name: string; quantity: number }[]
+  >([]);
   const theme = useMantineTheme();
   const { startLoading, stopLoading } = useContext(LoadingContext);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -38,34 +40,35 @@ export default function Home() {
       }
       try {
         const orders = await getOrders();
-      
-      const itemSales: Record<string, { name: string; quantity: number }> = {};
-      let totalSalesCalc = 0;
-      let totalQuantityCalc = 0;
 
-      orders.forEach((order) => {
-        order.OrderItem.forEach((item) => {
-          const menuItemId = item.menuItemId;
-          if (!itemSales[menuItemId]) {
-            itemSales[menuItemId] = {
-              name: item.MenuItem.name,
-              quantity: 0,
-            };
-          }
-          itemSales[menuItemId].quantity += item.quantity;
-          totalQuantityCalc += item.quantity;
-          totalSalesCalc += item.MenuItem.price * item.quantity;
+        const itemSales: Record<string, { name: string; quantity: number }> =
+          {};
+        let totalSalesCalc = 0;
+        let totalQuantityCalc = 0;
+
+        orders.forEach((order) => {
+          order.OrderItem.forEach((item) => {
+            const menuItemId = item.menuItemId;
+            if (!itemSales[menuItemId]) {
+              itemSales[menuItemId] = {
+                name: item.MenuItem.name,
+                quantity: 0,
+              };
+            }
+            itemSales[menuItemId].quantity += item.quantity;
+            totalQuantityCalc += item.quantity;
+            totalSalesCalc += item.MenuItem.price * item.quantity;
+          });
         });
-      });
 
-      const popularItemsCalc = Object.values(itemSales)
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 3);
+        const popularItemsCalc = Object.values(itemSales)
+          .sort((a, b) => b.quantity - a.quantity)
+          .slice(0, 3);
 
-      setTotalSales(totalSalesCalc);
-      setTotalOrders(orders.length);
-      setTotalQuantity(totalQuantityCalc);
-      setPopularItems(popularItemsCalc);
+        setTotalSales(totalSalesCalc);
+        setTotalOrders(orders.length);
+        setTotalQuantity(totalQuantityCalc);
+        setPopularItems(popularItemsCalc);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -75,9 +78,9 @@ export default function Home() {
         }
       }
     };
-    
+
     fetchData();
-    
+
     const interval = setInterval(() => {
       fetchData();
     }, 5000);
@@ -91,22 +94,22 @@ export default function Home() {
       value: `${totalSales.toLocaleString()}円`,
       icon: IconCurrencyYen,
       color: "teal",
-      description: "累計売上高"
+      description: "累計売上高",
     },
     {
       title: "注文数",
       value: `${totalOrders}件`,
       icon: IconShoppingCart,
       color: "blue",
-      description: "累計注文件数"
+      description: "累計注文件数",
     },
     {
       title: "販売個数",
       value: `${totalQuantity || 0}個`,
       icon: IconUsers,
       color: "orange",
-      description: "累計販売個数"
-    }
+      description: "累計販売個数",
+    },
   ];
 
   return (
@@ -120,12 +123,12 @@ export default function Home() {
           <Grid.Col key={index} span={{ base: 12, sm: 6, md: 3 }}>
             <Paper shadow="sm" p="md" radius="md" withBorder>
               <Group justify="space-between" mb="xs">
-                <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+                <Text size="xs" c="dimmed" tt="uppercase">
                   {stat.title}
                 </Text>
-                <ThemeIcon 
-                  color={stat.color} 
-                  variant="light" 
+                <ThemeIcon
+                  color={stat.color}
+                  variant="light"
                   size="lg"
                   radius="md"
                 >
@@ -133,9 +136,7 @@ export default function Home() {
                 </ThemeIcon>
               </Group>
 
-              <Text size="xl" fw={700} mb="xs">
-                {stat.value}
-              </Text>
+              <Text size="xl">{stat.value}</Text>
 
               <Text size="xs" c="dimmed">
                 {stat.description}
@@ -153,14 +154,17 @@ export default function Home() {
                 <Title order={3} size="h4">
                   売上目標達成率
                 </Title>
-                <Badge color={totalSales >= 500000 ? "green" : "blue"} variant="light">
+                <Badge
+                  color={totalSales >= 500000 ? "green" : "blue"}
+                  variant="light"
+                >
                   {Math.min(Math.round((totalSales / 500000) * 100), 100)}%
                 </Badge>
               </Group>
-              <Progress 
-                value={Math.min(Math.round((totalSales / 500000) * 100), 100)} 
-                size="xl" 
-                radius="xl" 
+              <Progress
+                value={Math.min(Math.round((totalSales / 500000) * 100), 100)}
+                size="xl"
+                radius="xl"
                 color={theme.primaryColor}
               />
               <Text size="sm" c="dimmed">
@@ -181,20 +185,28 @@ export default function Home() {
                   popularItems.map((item, index) => (
                     <Group key={index} justify="space-between">
                       <Group gap="xs">
-                        <Badge 
-                          color={index === 0 ? "gold" : index === 1 ? "gray" : "orange"} 
-                          variant="filled" 
+                        <Badge
+                          color={
+                            index === 0
+                              ? "gold"
+                              : index === 1
+                              ? "gray"
+                              : "orange"
+                          }
+                          variant="filled"
                           size="sm"
                         >
                           {index + 1}
                         </Badge>
                         <Text size="sm">{item.name}</Text>
                       </Group>
-                      <Text size="sm" fw={600}>{item.quantity}杯</Text>
+                      <Text size="sm">{item.quantity}杯</Text>
                     </Group>
                   ))
                 ) : (
-                  <Text size="sm" c="dimmed">まだ注文がありません</Text>
+                  <Text size="sm" c="dimmed">
+                    まだ注文がありません
+                  </Text>
                 )}
               </Stack>
             </Stack>
@@ -203,7 +215,6 @@ export default function Home() {
       </Grid>
 
       <SalesChart />
-
     </Stack>
   );
 }

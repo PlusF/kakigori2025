@@ -171,9 +171,7 @@ export default function OrderPage() {
                     )}
                     <Stack gap="sm">
                       <Group justify="space-between">
-                        <Text size="sm" fw={600}>
-                          {menuItem.name}
-                        </Text>
+                        <Text size="sm">{menuItem.name}</Text>
                         <Badge
                           color={theme.primaryColor}
                           size="xs"
@@ -214,9 +212,7 @@ export default function OrderPage() {
                     <Paper key={item.menuItemId} p="sm" withBorder>
                       <Group justify="space-between" wrap="nowrap">
                         <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-                          <Text fw={500} truncate>
-                            {item.MenuItem.name}
-                          </Text>
+                          <Text truncate>{item.MenuItem.name}</Text>
                           <Text size="sm" c="dimmed">
                             {item.MenuItem.price}円 × {item.quantity}
                           </Text>
@@ -233,7 +229,7 @@ export default function OrderPage() {
                               )
                             }
                           >
-                            <IconMinus size={14} />
+                            <IconMinus size={16} />
                           </ActionIcon>
                           <NumberInput
                             value={item.quantity}
@@ -260,7 +256,7 @@ export default function OrderPage() {
                               )
                             }
                           >
-                            <IconPlus size={14} />
+                            <IconPlus size={16} />
                           </ActionIcon>
                           <ActionIcon
                             size="sm"
@@ -281,10 +277,8 @@ export default function OrderPage() {
               <Divider />
 
               <Group justify="space-between">
-                <Text size="lg" fw={600}>
-                  合計金額
-                </Text>
-                <Text size="xl" fw={700} c={theme.primaryColor}>
+                <Text size="lg">合計</Text>
+                <Text size="xl" c={theme.primaryColor}>
                   {totalAmount.toLocaleString()}円
                 </Text>
               </Group>

@@ -17,7 +17,12 @@ import {
   NumberInput,
 } from "@mantine/core";
 import { useState, useEffect, useContext } from "react";
-import { IconShoppingCart, IconReceipt, IconEdit, IconTrash } from "@tabler/icons-react";
+import {
+  IconShoppingCart,
+  IconReceipt,
+  IconEdit,
+  IconTrash,
+} from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { OrderWithItems } from "../_actions/types";
 import { getOrders } from "../_actions/getOrders";
@@ -38,14 +43,16 @@ export default function OrderHistory() {
   const theme = useMantineTheme();
   const [editModalOpened, setEditModalOpened] = useState(false);
   const [deleteModalOpened, setDeleteModalOpened] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<OrderWithItems | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderWithItems | null>(
+    null
+  );
   const [editedItems, setEditedItems] = useState<OrderItemWithMenuItem[]>([]);
   const router = useRouter();
   const { startLoading, stopLoading } = useContext(LoadingContext);
 
   useEffect(() => {
     let isInitial = true;
-    
+
     const fetchOrders = async () => {
       if (isInitial) {
         startLoading();
@@ -62,9 +69,9 @@ export default function OrderHistory() {
         }
       }
     };
-    
+
     fetchOrders();
-    
+
     const interval = setInterval(() => {
       fetchOrders();
     }, 5000);
@@ -85,10 +92,12 @@ export default function OrderHistory() {
 
   const handleEditClick = (order: OrderWithItems) => {
     setSelectedOrder(order);
-    setEditedItems(order.OrderItem.map((item) => ({
-      ...item,
-      quantity: item.quantity
-    })));
+    setEditedItems(
+      order.OrderItem.map((item) => ({
+        ...item,
+        quantity: item.quantity,
+      }))
+    );
     setEditModalOpened(true);
   };
 
@@ -102,11 +111,11 @@ export default function OrderHistory() {
 
     startLoading();
     try {
-      const orderItems = editedItems.map(item => ({
+      const orderItems = editedItems.map((item) => ({
         menuItemId: item.menuItemId,
-        quantity: item.quantity
+        quantity: item.quantity,
       }));
-      
+
       const result = await updateOrder(selectedOrder.id, orderItems);
       setOrders(result);
       setEditModalOpened(false);
@@ -155,9 +164,11 @@ export default function OrderHistory() {
   };
 
   const updateItemQuantity = (itemId: string, quantity: number) => {
-    setEditedItems(prev => prev.map(item => 
-      item.id === itemId ? { ...item, quantity } : item
-    ).filter(item => item.quantity > 0));
+    setEditedItems((prev) =>
+      prev
+        .map((item) => (item.id === itemId ? { ...item, quantity } : item))
+        .filter((item) => item.quantity > 0)
+    );
   };
 
   return (
@@ -192,9 +203,7 @@ export default function OrderHistory() {
                       size={20}
                       color={theme.colors[theme.primaryColor][6]}
                     />
-                    <Text fw={600} size="lg">
-                      注文 #{orders.length - index}
-                    </Text>
+                    <Text size="lg">注文 #{orders.length - index}</Text>
                   </Group>
                   <Group gap="xs">
                     <Badge variant="light" color="blue">
@@ -232,12 +241,14 @@ export default function OrderHistory() {
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
-                      {order.OrderItem.map((item) => (
+                      {order.OrderItem.sort((a, b) => 
+                        a.MenuItem.sortOrder - b.MenuItem.sortOrder
+                      ).map((item) => (
                         <Table.Tr key={item.id}>
                           <Table.Td>{item.MenuItem.name}</Table.Td>
                           <Table.Td>{item.MenuItem.price}円</Table.Td>
                           <Table.Td>{item.quantity}</Table.Td>
-                          <Table.Td fw={500}>
+                          <Table.Td>
                             {(
                               item.MenuItem.price * item.quantity
                             ).toLocaleString()}
@@ -252,10 +263,8 @@ export default function OrderHistory() {
                 <Divider />
 
                 <Group justify="space-between">
-                  <Text size="lg" fw={600}>
-                    合計金額
-                  </Text>
-                  <Text size="xl" fw={700} c={theme.primaryColor}>
+                  <Text size="lg">合計金額</Text>
+                  <Text size="xl" c={theme.primaryColor}>
                     {order.total.toLocaleString()}円
                   </Text>
                 </Group>
@@ -283,41 +292,52 @@ export default function OrderHistory() {
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {editedItems.map((item) => (
+                {editedItems.sort((a, b) => 
+                  a.MenuItem.sortOrder - b.MenuItem.sortOrder
+                ).map((item) => (
                   <Table.Tr key={item.id}>
                     <Table.Td>{item.MenuItem.name}</Table.Td>
                     <Table.Td>{item.MenuItem.price}円</Table.Td>
                     <Table.Td>
                       <NumberInput
                         value={item.quantity}
-                        onChange={(value) => updateItemQuantity(item.id, Number(value) || 0)}
+                        onChange={(value) =>
+                          updateItemQuantity(item.id, Number(value) || 0)
+                        }
                         min={0}
                         max={99}
                         style={{ width: 80 }}
                       />
                     </Table.Td>
-                    <Table.Td fw={500}>
+                    <Table.Td>
                       {(item.MenuItem.price * item.quantity).toLocaleString()}円
                     </Table.Td>
                   </Table.Tr>
                 ))}
               </Table.Tbody>
             </Table>
-            
+
             <Divider />
-            
+
             <Group justify="space-between">
-              <Text size="lg" fw={600}>
-                合計金額
-              </Text>
-              <Text size="xl" fw={700} c={theme.primaryColor}>
-                {editedItems.reduce((acc, item) => 
-                  acc + item.MenuItem.price * item.quantity, 0).toLocaleString()}円
+              <Text size="lg">合計金額</Text>
+              <Text size="xl" c={theme.primaryColor}>
+                {editedItems
+                  .reduce(
+                    (acc, item) => acc + item.MenuItem.price * item.quantity,
+                    0
+                  )
+                  .toLocaleString()}
+                円
               </Text>
             </Group>
-            
+
             <Group justify="flex-end" gap="sm">
-              <Button variant="light" radius="md" onClick={() => setEditModalOpened(false)}>
+              <Button
+                variant="light"
+                radius="md"
+                onClick={() => setEditModalOpened(false)}
+              >
                 キャンセル
               </Button>
               <Button variant="filled" radius="md" onClick={handleUpdateOrder}>
@@ -338,10 +358,19 @@ export default function OrderHistory() {
             この注文を削除してもよろしいですか？この操作は取り消せません。
           </Text>
           <Group justify="flex-end" gap="sm">
-            <Button variant="light" radius="md" onClick={() => setDeleteModalOpened(false)}>
+            <Button
+              variant="light"
+              radius="md"
+              onClick={() => setDeleteModalOpened(false)}
+            >
               キャンセル
             </Button>
-            <Button color="red" variant="filled" radius="md" onClick={handleDeleteOrder}>
+            <Button
+              color="red"
+              variant="filled"
+              radius="md"
+              onClick={handleDeleteOrder}
+            >
               削除
             </Button>
           </Group>

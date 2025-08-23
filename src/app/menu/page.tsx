@@ -67,7 +67,7 @@ export default function Menu() {
               <Group justify="space-between">
                 <Text size="sm">{menuItem.name}</Text>
 
-                <Badge color={theme.primaryColor} size="xs">
+                <Badge color={theme.primaryColor} size="md">
                   {menuItem.price}円
                 </Badge>
               </Group>
