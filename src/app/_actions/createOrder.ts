@@ -11,6 +11,7 @@ export async function createOrder(
       id: {
         in: orderItems.map((item) => item.menuItemId),
       },
+      isActive: true,
     },
   });
 

@@ -13,6 +13,7 @@ export async function updateOrder(
       id: {
         in: orderItems.map(item => item.menuItemId),
       },
+      isActive: true,
     },
   });
 

@@ -5,7 +5,8 @@ import {
   IconHome, 
   IconMenu2, 
   IconShoppingCart, 
-  IconHistory 
+  IconHistory,
+  IconCloudRain
 } from "@tabler/icons-react";
 
 export default function Navbar({ onNavigate }: { onNavigate: () => void }) {
@@ -72,6 +73,21 @@ export default function Navbar({ onNavigate }: { onNavigate: () => void }) {
             root: {
               borderRadius: theme.radius.md,
               fontWeight: pathname === "/order-history" ? 600 : 400,
+            }
+          }}
+        />
+        <NavLink
+          active={pathname === "/weather"}
+          component={Link}
+          href="/weather"
+          label="天気予報"
+          leftSection={<IconCloudRain size={20} />}
+          onClick={onNavigate}
+          variant="filled"
+          styles={{
+            root: {
+              borderRadius: theme.radius.md,
+              fontWeight: pathname === "/weather" ? 600 : 400,
             }
           }}
         />
