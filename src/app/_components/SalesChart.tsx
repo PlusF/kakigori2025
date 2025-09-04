@@ -47,7 +47,7 @@ export function SalesChart() {
 
         const intervals: Record<string, number> = {};
 
-        for (let hour = 0; hour < 24; hour++) {
+        for (let hour = 11; hour < 20; hour++) {
           for (let minute = 0; minute < 60; minute += 30) {
             const timeKey = `${hour.toString().padStart(2, "0")}:${minute
               .toString()
@@ -74,10 +74,7 @@ export function SalesChart() {
             time,
             orderCount,
           }))
-          .filter((interval) => {
-            const [hour] = interval.time.split(":").map(Number);
-            return hour >= 8 && hour < 23;
-          });
+          .sort((a, b) => a.time.localeCompare(b.time));
 
         setChartData(data);
       } catch (error) {
@@ -153,7 +150,7 @@ export function SalesChart() {
         )}
 
         <Text size="xs" c="dimmed" ta="center">
-          30分ごとの注文数を表示 (営業時間: 8:00 - 23:00)
+          30分ごとの注文数を表示 (営業時間: 11:00 - 20:00)
         </Text>
       </Stack>
     </Paper>

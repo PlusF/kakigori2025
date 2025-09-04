@@ -29,6 +29,9 @@ export default function Home() {
   const [popularItems, setPopularItems] = useState<
     { name: string; quantity: number }[]
   >([]);
+  const [itemQuantities, setItemQuantities] = useState<
+    Record<string, number>
+  >({});
   const theme = useMantineTheme();
   const { startLoading, stopLoading } = useContext(LoadingContext);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -43,19 +46,22 @@ export default function Home() {
 
         const itemSales: Record<string, { name: string; quantity: number }> =
           {};
+        const itemQuantitiesCalc: Record<string, number> = {};
         let totalSalesCalc = 0;
         let totalQuantityCalc = 0;
 
         orders.forEach((order) => {
           order.OrderItem.forEach((item) => {
             const menuItemId = item.menuItemId;
+            const itemName = item.MenuItem.name;
             if (!itemSales[menuItemId]) {
               itemSales[menuItemId] = {
-                name: item.MenuItem.name,
+                name: itemName,
                 quantity: 0,
               };
             }
             itemSales[menuItemId].quantity += item.quantity;
+            itemQuantitiesCalc[itemName] = (itemQuantitiesCalc[itemName] || 0) + item.quantity;
             totalQuantityCalc += item.quantity;
             totalSalesCalc += item.MenuItem.price * item.quantity;
           });
@@ -69,6 +75,7 @@ export default function Home() {
         setTotalOrders(orders.length);
         setTotalQuantity(totalQuantityCalc);
         setPopularItems(popularItemsCalc);
+        setItemQuantities(itemQuantitiesCalc);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -112,6 +119,13 @@ export default function Home() {
     },
   ];
 
+  const productTargets = [
+    { name: "いちご", target: 350, color: "pink" },
+    { name: "ブルーハワイ", target: 350, color: "blue" },
+    { name: "コーヒー", target: 250, color: "brown" },
+    { name: "カシス", target: 250, color: "grape" },
+  ];
+
   return (
     <Stack gap="xl">
       <Title order={1} size="h1" c={theme.primaryColor}>
@@ -147,34 +161,7 @@ export default function Home() {
       </Grid>
 
       <Grid gutter="md">
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Paper shadow="sm" p="lg" radius="md" withBorder>
-            <Stack gap="md">
-              <Group justify="space-between">
-                <Title order={3} size="h4">
-                  売上目標達成率
-                </Title>
-                <Badge
-                  color={totalSales >= 500000 ? "green" : "blue"}
-                  variant="light"
-                >
-                  {Math.min(Math.round((totalSales / 500000) * 100), 100)}%
-                </Badge>
-              </Group>
-              <Progress
-                value={Math.min(Math.round((totalSales / 500000) * 100), 100)}
-                size="xl"
-                radius="xl"
-                color={theme.primaryColor}
-              />
-              <Text size="sm" c="dimmed">
-                目標: 500,000円 / 現在: {totalSales.toLocaleString()}円
-              </Text>
-            </Stack>
-          </Paper>
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, md: 6 }}>
+        <Grid.Col span={{ base: 12 }}>
           <Paper shadow="sm" p="lg" radius="md" withBorder>
             <Stack gap="md">
               <Title order={3} size="h4">
@@ -213,6 +200,50 @@ export default function Home() {
           </Paper>
         </Grid.Col>
       </Grid>
+
+      <Paper shadow="sm" p="lg" radius="md" withBorder>
+        <Stack gap="md">
+          <Title order={3} size="h4">
+            商品別売上目標
+          </Title>
+          <Grid gutter="md">
+            {productTargets.map((product) => {
+              const sold = itemQuantities[product.name] || 0;
+              const percentage = Math.min(
+                Math.round((sold / product.target) * 100),
+                100
+              );
+              return (
+                <Grid.Col key={product.name} span={{ base: 12, sm: 6, md: 3 }}>
+                  <Stack gap="xs">
+                    <Group justify="space-between">
+                      <Text size="sm" fw={500}>
+                        {product.name}
+                      </Text>
+                      <Badge
+                        color={percentage >= 100 ? "green" : product.color}
+                        variant="light"
+                        size="sm"
+                      >
+                        {percentage}%
+                      </Badge>
+                    </Group>
+                    <Progress
+                      value={percentage}
+                      size="md"
+                      radius="xl"
+                      color={percentage >= 100 ? "green" : product.color}
+                    />
+                    <Text size="xs" c="dimmed">
+                      {sold}杯 / 目標{product.target}杯
+                    </Text>
+                  </Stack>
+                </Grid.Col>
+              );
+            })}
+          </Grid>
+        </Stack>
+      </Paper>
 
       <SalesChart />
     </Stack>
