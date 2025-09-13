@@ -29,9 +29,9 @@ export default function Home() {
   const [popularItems, setPopularItems] = useState<
     { name: string; quantity: number }[]
   >([]);
-  const [itemQuantities, setItemQuantities] = useState<
-    Record<string, number>
-  >({});
+  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>(
+    {}
+  );
   const theme = useMantineTheme();
   const { startLoading, stopLoading } = useContext(LoadingContext);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -61,7 +61,8 @@ export default function Home() {
               };
             }
             itemSales[menuItemId].quantity += item.quantity;
-            itemQuantitiesCalc[itemName] = (itemQuantitiesCalc[itemName] || 0) + item.quantity;
+            itemQuantitiesCalc[itemName] =
+              (itemQuantitiesCalc[itemName] || 0) + item.quantity;
             totalQuantityCalc += item.quantity;
             totalSalesCalc += item.MenuItem.price * item.quantity;
           });
@@ -120,10 +121,10 @@ export default function Home() {
   ];
 
   const productTargets = [
-    { name: "いちご", target: 350, color: "pink" },
-    { name: "ブルーハワイ", target: 350, color: "blue" },
-    { name: "コーヒー", target: 250, color: "brown" },
-    { name: "カシス", target: 250, color: "grape" },
+    { name: "初恋いちご", target: 200, color: "pink" },
+    { name: "青春ブルーハワイ", target: 200, color: "blue" },
+    { name: "ほろ苦コーヒー", target: 100, color: "brown" },
+    { name: "宵カシス", target: 100, color: "grape" },
   ];
 
   return (

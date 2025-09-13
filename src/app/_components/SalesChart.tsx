@@ -20,13 +20,15 @@ interface ChartData {
 }
 
 export function SalesChart() {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date(2024, 8, 13));
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    new Date(2025, 8, 14)
+  );
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
   const dateOptions = [
-    { value: '2024-09-13', label: '9月13日' },
-    { value: '2024-09-14', label: '9月14日' }
+    { value: "2025-09-13", label: "9月13日" },
+    { value: "2025-09-14", label: "9月14日" },
   ];
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function SalesChart() {
 
         const intervals: Record<string, number> = {};
 
-        for (let hour = 11; hour < 20; hour++) {
+        for (let hour = 11; hour < 21; hour++) {
           for (let minute = 0; minute < 60; minute += 30) {
             const timeKey = `${hour.toString().padStart(2, "0")}:${minute
               .toString()
@@ -99,8 +101,12 @@ export function SalesChart() {
             売上推移グラフ
           </Title>
           <Select
-            value={selectedDate ? dayjs(selectedDate).format('YYYY-MM-DD') : null}
-            onChange={(value) => setSelectedDate(value ? new Date(value) : null)}
+            value={
+              selectedDate ? dayjs(selectedDate).format("YYYY-MM-DD") : null
+            }
+            onChange={(value) =>
+              setSelectedDate(value ? new Date(value) : null)
+            }
             data={dateOptions}
             placeholder="日付を選択"
           />
@@ -150,7 +156,7 @@ export function SalesChart() {
         )}
 
         <Text size="xs" c="dimmed" ta="center">
-          30分ごとの注文数を表示 (営業時間: 11:00 - 20:00)
+          30分ごとの注文数を表示 (営業時間: 11:00 - 21:00)
         </Text>
       </Stack>
     </Paper>
